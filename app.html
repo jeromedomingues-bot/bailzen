@@ -1468,7 +1468,7 @@ function genLettrePDF(config){
   doc.setFont('helvetica','bold');doc.text(config.expediteur.nom,ML,y);
   if(config.envoi){y+=6;doc.setFont('helvetica','italic');doc.setFontSize(9);doc.text('Lettre recommandée avec accusé de réception',ML,y);}
   // Footer
-  doc.setFontSize(8);doc.setTextColor(150,150,150);doc.text('Document généré par BailZen – www.bailzen.netlify.app',105,285,{align:'center'});
+  doc.setFontSize(8);doc.setTextColor(150,150,150);doc.text('Document généré par BailZen – www.bailzen.pages.dev',105,285,{align:'center'});
   doc.setTextColor(0,0,0);
   return doc;
 }
@@ -2160,7 +2160,7 @@ function genCertificatApp(r){
     doc.setFillColor(15,118,110);doc.rect(0,0,210,30,'F');
     doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont('helvetica','bold');
     doc.text('CERTIFICAT DE SIGNATURE ÉLECTRONIQUE',105,13,{align:'center'});
-    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('BailZen — bailzen.netlify.app',105,22,{align:'center'});
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('BailZen — bailzen.pages.dev',105,22,{align:'center'});
     doc.setTextColor(0,0,0);
     let y=42;
     doc.setFillColor(240,253,250);doc.roundedRect(ML,y-6,PW,52,3,3,'F');
