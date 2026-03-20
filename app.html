@@ -1052,16 +1052,27 @@ function handlePhoto(roomId,input){
     reader.onload=e=>{
       const img=new Image();
       img.onload=()=>{
-        // Redimensionner à max 1400px pour alléger la mémoire et assurer la compatibilité jsPDF
-        const MAX=1400;
+        // MAX 800px pour iOS/Safari (limite mémoire canvas WebKit)
+        const MAX=800;
         let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-        const cvs=document.createElement('canvas');
-        cvs.width=w;cvs.height=h;
-        const ctx=cvs.getContext('2d');
-        ctx.drawImage(img,0,0,w,h);
-        const resized=cvs.toDataURL('image/jpeg',0.82);
-        roomPhotos[roomId].push(resized);
+        try{
+          const cvs=document.createElement('canvas');
+          cvs.width=w;cvs.height=h;
+          const ctx=cvs.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          const resized=cvs.toDataURL('image/jpeg',0.75);
+          // Vérifier que le canvas n'est pas vide (bug iOS Safari)
+          if(resized&&resized.length>100&&resized!=='data:,'){
+            roomPhotos[roomId].push(resized);
+          } else {
+            // Fallback : utiliser le data URL original
+            roomPhotos[roomId].push(e.target.result);
+          }
+        }catch(err){
+          // Fallback si canvas échoue (mémoire insuffisante sur iOS)
+          roomPhotos[roomId].push(e.target.result);
+        }
         renderPhotos(roomId);
       };
       img.onerror=()=>{roomPhotos[roomId].push(e.target.result);renderPhotos(roomId);};
@@ -1259,9 +1270,13 @@ async function genEdl(){
           const idx=i+j;if(idx>=photos.length)break;
           const x=ML+(imgW+gap)*j;
           try{
-            // Les photos sont toujours JPEG après redimensionnement canvas
-            const b64=photos[idx].split(',')[1]||photos[idx];
-            doc.addImage(b64,'JPEG',x,y,imgW,imgH);
+            const dataUrl=photos[idx];
+            // Détecter le format depuis le header data URL
+            let fmt='JPEG';
+            if(dataUrl.startsWith('data:')){const mime=dataUrl.split(';')[0].split(':')[1];if(mime==='image/png')fmt='PNG';}
+            const b64=dataUrl.includes(',')?dataUrl.split(',')[1]:dataUrl;
+            if(!b64||b64.length<10)throw new Error('base64 vide');
+            doc.addImage(b64,fmt,x,y,imgW,imgH);
           }catch(e){
             console.warn('Photo insert error (room '+room.id+', idx '+idx+'):',e.message);
             try{doc.addImage(photos[idx],'JPEG',x,y,imgW,imgH);}catch(e2){
