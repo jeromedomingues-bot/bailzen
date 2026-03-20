@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BailZen – Gérez vos locations sereinement</title>
+  <meta name="description" content="BailZen génère vos baux, états des lieux et quittances en 2 minutes. Gratuit pour tous les propriétaires bailleurs.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f766e; --primary-dark: #0d5f58; --primary-light: #f0fdfa;
+      --accent: #f59e0b; --accent-light: #fef3c7;
+      --dark: #0f172a; --gray: #64748b; --gray-light: #f1f5f9; --gray-border: #e2e8f0;
+      --white: #ffffff; --radius: 12px; --radius-lg: 20px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; color: var(--dark); background: var(--white); }
+    nav {
+      position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px); border-bottom: 1px solid var(--gray-border);
+      padding: 0 5%; height: 68px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-size: 22px; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .logo span { background: var(--primary); color: white; padding: 4px 8px; border-radius: 8px; font-size: 18px; }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-links a { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .btn-ghost { color: var(--gray); } .btn-ghost:hover { background: var(--gray-light); color: var(--dark); }
+    .btn-nav { background: var(--primary); color: white !important; } .btn-nav:hover { background: var(--primary-dark) !important; }
+    .hero { background: linear-gradient(135deg, #0f766e 0%, #0d5f58 50%, #065f46 100%); padding: 100px 5% 80px; text-align: center; position: relative; overflow: hidden; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; margin-bottom: 28px; position: relative; }
+    .hero h1 { font-size: clamp(36px, 5vw, 62px); font-weight: 800; color: white; line-height: 1.15; margin-bottom: 22px; position: relative; }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p { font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; position: relative; }
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
+    .btn-hero { padding: 16px 32px; border-radius: var(--radius); font-size: 16px; font-weight: 700; text-decoration: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-hero-primary { background: var(--accent); color: var(--dark); box-shadow: 0 4px 20px rgba(245,158,11,0.4); }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,158,11,0.5); }
+    .btn-hero-secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,0.25); }
+    .hero-note { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 18px; position: relative; }
+    .stats { background: var(--dark); padding: 40px 5%; display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-number { font-size: 32px; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+    section { padding: 80px 5%; }
+    .section-tag { display: inline-block; background: var(--primary-light); color: var(--primary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 6px 14px; border-radius: 20px; margin-bottom: 16px; }
+    .section-title { font-size: clamp(28px, 3.5vw, 44px); font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+    .section-sub { font-size: 17px; color: var(--gray); line-height: 1.6; max-width: 560px; }
+    .text-center { text-align: center; } .text-center .section-sub { margin: 0 auto; }
+    .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; margin-top: 56px; }
+    .how-card { text-align: center; }
+    .how-num { width: 52px; height: 52px; border-radius: 50%; background: var(--primary); color: white; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .how-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .how-desc { font-size: 14px; color: var(--gray); line-height: 1.6; }
+    .features-bg { background: var(--gray-light); }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 56px; }
+    .feature-card { background: white; border-radius: var(--radius-lg); padding: 28px; border: 1px solid var(--gray-border); transition: all 0.2s; }
+    .feature-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.08); transform: translateY(-3px); }
+    .feature-icon { font-size: 32px; margin-bottom: 16px; }
+    .feature-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature-desc { font-size: 14px; color: var(--gray); line-height: 1.6; }
+    .feature-badge { display: inline-block; font-size: 11px; font-weight: 600; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 6px; margin-top: 10px; }
+    .docs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-top: 56px; }
+    .doc-card { border-radius: var(--radius-lg); padding: 32px 28px; }
+    .doc-card-bail { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; }
+    .doc-card-edl  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #bbf7d0; }
+    .doc-card-quit { background: linear-gradient(135deg, #fff7ed, #fed7aa); border: 1px solid #fdba74; }
+    .doc-icon { font-size: 40px; margin-bottom: 16px; }
+    .doc-title { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .doc-desc { font-size: 14px; color: var(--gray); line-height: 1.6; }
+    .doc-list { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+    .doc-list li { font-size: 13px; color: var(--gray); list-style: none; display: flex; align-items: center; gap: 8px; }
+    .doc-list li::before { content: '✓'; color: var(--primary); font-weight: 700; }
+    .gli-banner { background: linear-gradient(135deg, #1e3a5f, #1e40af); border-radius: var(--radius-lg); padding: 48px 40px; display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin: 0 5%; }
+    .gli-left .tag { background: rgba(245,158,11,0.2); color: var(--accent); font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; margin-bottom: 16px; display: inline-block; }
+    .gli-title { font-size: 26px; font-weight: 800; color: white; margin-bottom: 12px; }
+    .gli-desc { font-size: 15px; color: rgba(255,255,255,0.75); line-height: 1.6; max-width: 460px; }
+    .btn-gli { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: var(--dark); padding: 16px 28px; border-radius: var(--radius); font-size: 15px; font-weight: 700; text-decoration: none; transition: all 0.2s; }
+    .btn-gli:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245,158,11,0.4); }
+    .pricing-card { max-width: 480px; margin: 56px auto 0; background: white; border-radius: var(--radius-lg); border: 2px solid var(--primary); padding: 48px 40px; text-align: center; box-shadow: 0 20px 60px rgba(15,118,110,0.15); }
+    .pricing-tag { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 16px; border-radius: 20px; margin-bottom: 20px; }
+    .pricing-price { font-size: 64px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .pricing-price span { font-size: 20px; vertical-align: super; }
+    .pricing-period { font-size: 16px; color: var(--gray); margin-bottom: 32px; }
+    .pricing-list { text-align: left; display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
+    .pricing-list li { display: flex; align-items: center; gap: 12px; font-size: 15px; list-style: none; }
+    .pricing-list li::before { content: '✓'; background: var(--primary-light); color: var(--primary); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .btn-pricing { display: block; background: var(--primary); color: white; padding: 16px; border-radius: var(--radius); font-size: 16px; font-weight: 700; text-decoration: none; transition: all 0.2s; }
+    .btn-pricing:hover { background: var(--primary-dark); transform: translateY(-2px); }
+    .pricing-note { font-size: 13px; color: var(--gray); margin-top: 16px; }
+    .faq-list { max-width: 700px; margin: 56px auto 0; display: flex; flex-direction: column; gap: 16px; }
+    .faq-item { border: 1px solid var(--gray-border); border-radius: var(--radius); overflow: hidden; }
+    .faq-q { padding: 20px 24px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: white; }
+    .faq-q:hover { background: var(--gray-light); }
+    .faq-a { padding: 0 24px; max-height: 0; overflow: hidden; font-size: 14px; color: var(--gray); line-height: 1.7; transition: all 0.3s; }
+    .faq-item.open .faq-a { padding: 0 24px 20px; max-height: 200px; }
+    .faq-chevron { transition: transform 0.3s; }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); }
+    footer { background: var(--dark); color: rgba(255,255,255,0.6); padding: 60px 5% 32px; }
+    .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+    .footer-logo { font-size: 22px; font-weight: 800; color: white; margin-bottom: 12px; }
+    .footer-desc { font-size: 14px; line-height: 1.7; }
+    .footer-col h4 { font-size: 14px; font-weight: 600; color: white; margin-bottom: 16px; }
+    .footer-col a { display: block; font-size: 14px; color: rgba(255,255,255,0.6); text-decoration: none; margin-bottom: 10px; transition: color 0.2s; }
+    .footer-col a:hover { color: white; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a { color: rgba(255,255,255,0.5); text-decoration: none; }
+    @media (max-width: 768px) { .nav-links .btn-ghost { display: none; } .stats { gap: 32px; } .gli-banner { padding: 32px 24px; } .footer-top { grid-template-columns: 1fr; gap: 32px; } }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo"><span>🏠</span> BailZen</a>
+  <div class="nav-links">
+    <a href="#fonctionnalites" class="btn-ghost">Fonctionnalités</a>
+    <a href="#tarifs" class="btn-ghost">Tarifs</a>
+    <a href="login.html" class="btn-ghost">Connexion</a>
+    <a href="login.html#register" class="btn-nav">Commencer — c'est gratuit</a>
+  </div>
+</nav>
+<section class="hero">
+  <div class="hero-badge">🎉 100% gratuit pour les propriétaires bailleurs</div>
+  <h1>Gérez vos locations<br>avec <em>sérénité</em></h1>
+  <p>Générez vos baux, états des lieux et quittances en 2 minutes. Conforme loi Alur, téléchargement PDF immédiat.</p>
+  <div class="hero-cta">
+    <a href="login.html#register" class="btn-hero btn-hero-primary">✨ Créer mon compte gratuit</a>
+    <a href="#fonctionnalites" class="btn-hero btn-hero-secondary">Voir comment ça marche</a>
+  </div>
+  <p class="hero-note">✓ Aucune CB requise &nbsp;·&nbsp; ✓ Illimité &nbsp;·&nbsp; ✓ Conforme loi Alur</p>
+</section>
+<div class="stats">
+  <div class="stat"><div class="stat-number">3 min</div><div class="stat-label">Pour générer un bail complet</div></div>
+  <div class="stat"><div class="stat-number">100%</div><div class="stat-label">Conforme loi Alur 2024</div></div>
+  <div class="stat"><div class="stat-number">0€</div><div class="stat-label">Pour toujours</div></div>
+  <div class="stat"><div class="stat-number">3</div><div class="stat-label">Documents en un seul endroit</div></div>
+</div>
+<section id="fonctionnalites">
+  <div class="text-center">
+    <span class="section-tag">Comment ça marche</span>
+    <h2 class="section-title">Prêt en 3 étapes</h2>
+    <p class="section-sub">Pas de formation requise. Si vous pouvez remplir un formulaire, vous pouvez utiliser BailZen.</p>
+  </div>
+  <div class="how-grid">
+    <div class="how-card"><div class="how-num">1</div><div class="how-title">Créez votre compte</div><div class="how-desc">Inscription en 30 secondes. Vos données sont sécurisées et restent confidentielles.</div></div>
+    <div class="how-card"><div class="how-num">2</div><div class="how-title">Renseignez les infos</div><div class="how-desc">Remplissez les informations de votre bien et de votre locataire en suivant notre formulaire guidé.</div></div>
+    <div class="how-card"><div class="how-num">3</div><div class="how-title">Téléchargez votre PDF</div><div class="how-desc">Votre document est généré instantanément, prêt à être imprimé et signé.</div></div>
+  </div>
+</section>
+<section class="features-bg">
+  <div class="text-center">
+    <span class="section-tag">Fonctionnalités</span>
+    <h2 class="section-title">Tout ce dont vous avez besoin</h2>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card"><div class="feature-icon">📄</div><div class="feature-title">Bail de location</div><div class="feature-desc">Meublé ou non meublé, conforme à la loi Alur. Toutes les clauses obligatoires incluses.</div></div>
+    <div class="feature-card"><div class="feature-icon">🏡</div><div class="feature-title">État des lieux</div><div class="feature-desc">Entrée et sortie, pièce par pièce. Relevés de compteurs intégrés.</div><span class="feature-badge">📸 Photos bientôt</span></div>
+    <div class="feature-card"><div class="feature-icon">🧾</div><div class="feature-title">Quittance de loyer</div><div class="feature-desc">Montant en toutes lettres, mentions légales obligatoires.</div></div>
+    <div class="feature-card"><div class="feature-icon">📊</div><div class="feature-title">Tableau de bord</div><div class="feature-desc">Retrouvez l'historique de tous vos documents générés.</div></div>
+    <div class="feature-card"><div class="feature-icon">📱</div><div class="feature-title">100% mobile</div><div class="feature-desc">Utilisez BailZen depuis votre smartphone, tablette ou ordinateur.</div></div>
+    <div class="feature-card"><div class="feature-icon">🔒</div><div class="feature-title">Sécurisé & privé</div><div class="feature-desc">Données chiffrées, hébergement en Europe, conforme RGPD.</div></div>
+  </div>
+</section>
+<div class="gli-banner">
+  <div class="gli-left">
+    <span class="tag">🛡️ Partenaire recommandé</span>
+    <div class="gli-title">Protégez vos revenus locatifs</div>
+    <div class="gli-desc">En moyenne, un loyer impayé coûte 2 400€ à un propriétaire. La GLI couvre vos risques dès 2,5% du loyer mensuel.</div>
+  </div>
+  <div><a href="#" class="btn-gli">Obtenir un devis gratuit →</a></div>
+</div>
+<section id="tarifs">
+  <div class="text-center">
+    <span class="section-tag">Tarifs</span>
+    <h2 class="section-title">Simple et transparent</h2>
+    <p class="section-sub">BailZen est et restera gratuit. Nous nous rémunérons via nos partenaires, pas sur vous.</p>
+  </div>
+  <div class="pricing-card">
+    <span class="pricing-tag">✨ Plan Propriétaire</span>
+    <div class="pricing-price"><span>€</span>0</div>
+    <div class="pricing-period">pour toujours · aucune CB requise</div>
+    <ul class="pricing-list">
+      <li>Baux illimités (meublé & non meublé)</li>
+      <li>États des lieux illimités</li>
+      <li>Quittances illimitées</li>
+      <li>Tableau de bord & historique</li>
+      <li>Téléchargement PDF instantané</li>
+      <li>Accès depuis tous vos appareils</li>
+    </ul>
+    <a href="login.html#register" class="btn-pricing">Créer mon compte gratuitement →</a>
+    <p class="pricing-note">BailZen se finance via des partenariats avec des assureurs recommandés, jamais via vos données.</p>
+  </div>
+</section>
+<section class="features-bg">
+  <div class="text-center"><span class="section-tag">FAQ</span><h2 class="section-title">Questions fréquentes</h2></div>
+  <div class="faq-list">
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Est-ce vraiment gratuit ? <span class="faq-chevron">▾</span></div><div class="faq-a">Oui, complètement. BailZen est gratuit sans limite de documents ni abonnement caché. Nous nous finançons via des partenariats avec des assureurs.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Les documents sont-ils juridiquement valables ? <span class="faq-chevron">▾</span></div><div class="faq-a">Les modèles BailZen sont conformes à la loi Alur et à la loi du 6 juillet 1989. Ils incluent toutes les clauses obligatoires.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Mes données sont-elles en sécurité ? <span class="faq-chevron">▾</span></div><div class="faq-a">Toutes vos données sont chiffrées et hébergées en Europe. Nous sommes conformes au RGPD.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Puis-je utiliser BailZen sur mon téléphone ? <span class="faq-chevron">▾</span></div><div class="faq-a">Oui ! BailZen fonctionne parfaitement sur smartphone, tablette et ordinateur. Aucune application à installer.</div></div>
+  </div>
+</section>
+<section style="text-align:center">
+  <h2 class="section-title">Prêt à simplifier votre gestion locative ?</h2>
+  <p class="section-sub" style="margin:16px auto 36px">Rejoignez les propriétaires qui gèrent leurs locations sereinement avec BailZen.</p>
+  <a href="login.html#register" style="display:inline-flex;align-items:center;gap:10px;background:var(--primary);color:white;padding:18px 40px;border-radius:var(--radius);font-size:17px;font-weight:700;text-decoration:none">✨ Commencer gratuitement →</a>
+</section>
+<footer>
+  <div class="footer-top">
+    <div><div class="footer-logo">🏠 BailZen</div><p class="footer-desc">La plateforme gratuite qui simplifie la gestion locative pour les propriétaires bailleurs français.</p></div>
+    <div class="footer-col"><h4>Produit</h4><a href="#fonctionnalites">Fonctionnalités</a><a href="login.html#register">Créer un compte</a><a href="login.html">Se connecter</a></div>
+    <div class="footer-col"><h4>Légal</h4><a href="#">Mentions légales</a><a href="#">Politique de confidentialité</a><a href="#">CGU</a></div>
+  </div>
+  <div class="footer-bottom"><span>© 2024 BailZen</span><div class="footer-legal"><a href="#">Mentions légales</a><a href="#">CGU</a><a href="#">RGPD</a></div></div>
+</footer>
+<script>
+function toggleFaq(el) { el.parentElement.classList.toggle('open'); }
+document.querySelectorAll('a[href^="#"]').forEach(a => { a.addEventListener('click', e => { const t = document.querySelector(a.getAttribute('href')); if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'});} }); });
+</script>
+</body>
+</html>

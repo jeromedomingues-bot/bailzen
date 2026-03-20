@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>BailZen – Signature</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:'Inter',sans-serif;background:#f8fafc;min-height:100vh;color:#0f172a}
+    .page{max-width:560px;margin:0 auto;padding:24px 16px 40px}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+    .logo-icon{background:#0f766e;padding:6px 10px;border-radius:10px;font-size:18px;font-weight:800;color:white}
+    .logo-text{font-size:20px;font-weight:800;color:#0f172a}
+    .logo-badge{font-size:11px;background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;padding:2px 8px;border-radius:20px;font-weight:600}
+
+    /* States */
+    .state{display:none}.state.active{display:block}
+    .spinner{width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#0f766e;border-radius:50%;animation:spin 0.8s linear infinite;margin:60px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .center-msg{text-align:center;padding:60px 20px}
+    .center-msg .emoji{font-size:56px;margin-bottom:16px}
+    .center-msg h2{font-size:22px;font-weight:800;margin-bottom:8px}
+    .center-msg p{font-size:14px;color:#64748b;line-height:1.6}
+
+    /* Doc card */
+    .doc-card{background:white;border:1.5px solid #e2e8f0;border-radius:16px;padding:22px;margin-bottom:20px}
+    .doc-type-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:14px;background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4}
+    .doc-title{font-size:18px;font-weight:800;margin-bottom:12px;line-height:1.3}
+    .doc-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:14px}
+    .doc-row-label{font-weight:600;color:#64748b;min-width:90px;flex-shrink:0}
+    .doc-row-val{color:#0f172a}
+    .doc-expiry{margin-top:14px;padding-top:14px;border-top:1px solid #f1f5f9;font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px}
+
+    /* Signature zone */
+    .sig-section{background:white;border:1.5px solid #e2e8f0;border-radius:16px;padding:22px;margin-bottom:20px}
+    .sig-title{font-size:15px;font-weight:700;margin-bottom:6px}
+    .sig-sub{font-size:13px;color:#64748b;margin-bottom:14px}
+    .sig-canvas{width:100%;height:140px;border:2px dashed #94a3b8;border-radius:10px;cursor:crosshair;touch-action:none;display:block;background:white}
+    .sig-canvas.has-sig{border-color:#0f766e;border-style:solid}
+    .sig-actions{display:flex;justify-content:flex-end;margin-top:8px}
+    .btn-clear{background:none;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 14px;font-size:13px;color:#64748b;cursor:pointer;font-family:inherit}
+    .btn-clear:hover{border-color:#94a3b8;color:#0f172a}
+
+    /* Legal */
+    .legal-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6}
+
+    /* Buttons */
+    .btn-sign{width:100%;padding:16px;background:#0f766e;color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-sign:hover{background:#0d5f58;transform:translateY(-1px);box-shadow:0 4px 16px rgba(15,118,110,0.3)}
+    .btn-sign:disabled{background:#94a3b8;transform:none;box-shadow:none;cursor:not-allowed}
+
+    /* Success */
+    .success-card{background:white;border:1.5px solid #86efac;border-radius:16px;padding:28px;text-align:center}
+    .success-icon{font-size:64px;margin-bottom:16px}
+    .success-h{font-size:22px;font-weight:800;margin-bottom:8px;color:#059669}
+    .success-p{font-size:14px;color:#64748b;margin-bottom:20px;line-height:1.6}
+    .success-detail{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;font-size:13px;color:#065f46;line-height:1.8;text-align:left}
+
+    /* Full doc preview */
+    .btn-toggle-doc{width:100%;padding:11px;background:#f0fdfa;border:1.5px solid #99f6e4;border-radius:10px;color:#0f766e;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px;display:none}
+    .btn-toggle-doc:hover{background:#ccfbf1}
+    .full-preview-card{background:white;border:1.5px solid #e2e8f0;border-radius:16px;padding:20px;margin-bottom:18px;display:none}
+    .full-preview-card.show{display:block}
+    .full-preview-content{max-height:520px;overflow-y:auto;font-size:13px;line-height:1.65;padding-right:6px}
+    .full-preview-content::-webkit-scrollbar{width:4px}.full-preview-content::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:2px}
+    .fpc-h{font-size:11px;font-weight:700;padding:5px 10px;border-radius:4px;margin:14px 0 7px;letter-spacing:0.5px}
+    .fpc-bail .fpc-h{background:#1e40af;color:white}.fpc-edl .fpc-h{background:#059669;color:white}
+    .fpc-row{display:flex;gap:6px;margin-bottom:5px;font-size:13px}.fpc-lbl{font-weight:600;min-width:90px;color:#64748b;flex-shrink:0}
+    .fpc-tbl{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+    .fpc-tbl th{background:#f0fdf4;padding:6px 8px;text-align:left;font-weight:600;font-size:11px;color:#059669;border-bottom:1px solid #e2e8f0}
+    .fpc-tbl td{padding:6px 8px;border-bottom:1px solid #f1f5f9}
+
+    /* Footer */
+    .footer{text-align:center;margin-top:32px;font-size:12px;color:#94a3b8}
+    .footer a{color:#0f766e;text-decoration:none;font-weight:600}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="logo">
+    <div class="logo-icon">🏠</div>
+    <div class="logo-text">BailZen</div>
+    <div class="logo-badge">Signature sécurisée</div>
+  </div>
+
+  <!-- Loading -->
+  <div class="state active" id="state-loading">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Error -->
+  <div class="state" id="state-error">
+    <div class="center-msg">
+      <div class="emoji">⚠️</div>
+      <h2>Lien invalide ou expiré</h2>
+      <p>Ce lien de signature n'est plus valide. Il a peut-être expiré (30 jours) ou déjà été utilisé.<br><br>Contactez votre bailleur pour obtenir un nouveau lien.</p>
+    </div>
+  </div>
+
+  <!-- Already signed -->
+  <div class="state" id="state-done">
+    <div class="center-msg">
+      <div class="emoji">✅</div>
+      <h2>Document déjà signé</h2>
+      <p>Vous avez déjà signé ce document. Contactez votre bailleur pour obtenir une copie.</p>
+    </div>
+  </div>
+
+  <!-- Main signing interface -->
+  <div class="state" id="state-main">
+    <div class="doc-card">
+      <div class="doc-type-badge" id="doc-badge">📄 Document</div>
+      <div class="doc-title" id="doc-title">Chargement…</div>
+      <div class="doc-row"><span class="doc-row-label">🏠 Bailleur</span><span class="doc-row-val" id="doc-bailleur">—</span></div>
+      <div class="doc-row"><span class="doc-row-label">🔑 Locataire</span><span class="doc-row-val" id="doc-locataire">—</span></div>
+      <div class="doc-row"><span class="doc-row-label">📍 Bien</span><span class="doc-row-val" id="doc-bien">—</span></div>
+      <div class="doc-expiry">⏳ Lien valable jusqu'au <span id="doc-expiry">—</span></div>
+    </div>
+
+    <button class="btn-toggle-doc" id="btn-toggle-doc" onclick="toggleDocPreview()">📄 Lire le document complet ▾</button>
+    <div class="full-preview-card" id="full-preview-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #f1f5f9">
+        <div style="font-size:13px;font-weight:700;color:#0f766e">📄 Document à signer</div>
+        <button onclick="toggleDocPreview()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0">×</button>
+      </div>
+      <div class="full-preview-content" id="full-preview-content"></div>
+    </div>
+
+    <div class="sig-section">
+      <div class="sig-title">✍️ Votre signature</div>
+      <div class="sig-sub">Dessinez votre signature dans le cadre ci-dessous</div>
+      <canvas class="sig-canvas" id="sig-canvas"></canvas>
+      <div class="sig-actions"><button class="btn-clear" onclick="clearCanvas()">Effacer</button></div>
+    </div>
+
+    <div class="legal-box">
+      ⚖️ En signant, vous confirmez avoir pris connaissance du document ci-dessus et l'accepter dans son intégralité. Cette signature électronique constitue votre accord formel conformément à l'article 1366 du Code civil.
+    </div>
+
+    <button class="btn-sign" id="btn-sign" onclick="submitSignature()">
+      ✅ Signer le document
+    </button>
+  </div>
+
+  <!-- Success -->
+  <div class="state" id="state-success">
+    <div class="success-card">
+      <div class="success-icon">🎉</div>
+      <div class="success-h">Document signé !</div>
+      <div class="success-p">Votre signature a bien été enregistrée. Votre bailleur en a été informé et vous fera parvenir le document final.</div>
+      <div class="success-detail" id="success-detail"></div>
+    </div>
+  </div>
+
+  <div class="footer">Propulsé par <a href="https://bailzen.netlify.app">BailZen</a> — Gestion locative simplifiée</div>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+let currentRequest = null;
+
+// Show/hide states
+function showState(id) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById('state-' + id).classList.add('active');
+}
+
+// Format date
+function fmtDateFr(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+}
+
+const DOC_LABELS = {
+  bail: { label: '📄 Bail de location', badge: '📄 Bail de location' },
+  edl: { label: '🏡 État des lieux', badge: '🏡 État des lieux' },
+  quittance: { label: '🧾 Quittance de loyer', badge: '🧾 Quittance' },
+  courrier: { label: '✉️ Courrier', badge: '✉️ Courrier' },
+};
+
+// Load the request
+async function loadRequest() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  if (!token) { showState('error'); return; }
+
+  const { data, error } = await window._supabase
+    .from('signature_requests')
+    .select('*')
+    .eq('token', token)
+    .single();
+
+  if (error || !data) { showState('error'); return; }
+  if (data.status === 'signed') { showState('done'); return; }
+  if (new Date(data.expires_at) < new Date()) { showState('error'); return; }
+
+  currentRequest = data;
+
+  // Fill UI
+  const docInfo = DOC_LABELS[data.doc_type] || { label: '📄 Document', badge: '📄 Document' };
+  document.getElementById('doc-badge').textContent = docInfo.badge;
+  document.getElementById('doc-title').textContent = data.doc_title || docInfo.label;
+  document.getElementById('doc-bailleur').textContent = data.bailleur_nom || '—';
+  document.getElementById('doc-locataire').textContent = data.locataire_nom || '—';
+  document.getElementById('doc-bien').textContent = data.bien_adresse || '—';
+  document.getElementById('doc-expiry').textContent = fmtDateFr(data.expires_at);
+
+  showState('main');
+  initCanvas();
+  // Show full document if doc_data is present
+  if(data.doc_data){
+    const btn=document.getElementById('btn-toggle-doc');if(btn)btn.style.display='block';
+    const el=document.getElementById('full-preview-content');if(el)el.innerHTML=renderDocContent(data.doc_data,data.doc_type,data.signature_bailleur);
+  }
+}
+
+// Canvas signature
+function initCanvas() {
+  const canvas = document.getElementById('sig-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 520;
+  canvas.height = 140;
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  let drawing = false, lx = 0, ly = 0;
+
+  const pos = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX - r.left) * (canvas.width / r.width), y: (t.clientY - r.top) * (canvas.height / r.height) };
+  };
+  const start = (e) => { e.preventDefault(); drawing = true; const p = pos(e); lx = p.x; ly = p.y; ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, Math.PI * 2); ctx.fillStyle = '#0f172a'; ctx.fill(); canvas.classList.add('has-sig'); };
+  const move = (e) => { e.preventDefault(); if (!drawing) return; const p = pos(e); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(p.x, p.y); ctx.stroke(); lx = p.x; ly = p.y; };
+  const end = () => { drawing = false; };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('sig-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.classList.remove('has-sig');
+}
+
+function getSignatureData() {
+  const canvas = document.getElementById('sig-canvas');
+  const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+  return data.some(v => v !== 0) ? canvas.toDataURL('image/png') : null;
+}
+
+async function submitSignature() {
+  const sigData = getSignatureData();
+  if (!sigData) { alert('Veuillez dessiner votre signature avant de valider.'); return; }
+
+  const btn = document.getElementById('btn-sign');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enregistrement…';
+
+  const signedAt = new Date().toISOString();
+  const { error } = await window._supabase
+    .from('signature_requests')
+    .update({ status: 'signed', signature_locataire: sigData, signed_at: signedAt })
+    .eq('token', currentRequest.token)
+    .eq('status', 'pending');
+
+  if (error) {
+    btn.disabled = false;
+    btn.innerHTML = '✅ Signer le document';
+    alert('Erreur lors de l\'enregistrement. Veuillez réessayer.');
+    return;
+  }
+
+  // Generate PDF — full document if doc_data present, else certificate
+  if(currentRequest.doc_data && (currentRequest.doc_type==='bail'||currentRequest.doc_type==='edl')){
+    currentRequest.doc_type==='bail' ? genBailFromData(currentRequest.doc_data,sigData,currentRequest.signature_bailleur) : genEdlFromData(currentRequest.doc_data,sigData,currentRequest.signature_bailleur);
+  } else {
+    genCertificat(signedAt, sigData);
+  }
+  showState('success');
+
+  document.getElementById('success-detail').innerHTML = `
+    <strong>Document :</strong> ${currentRequest.doc_title || currentRequest.doc_type}<br>
+    <strong>Bailleur :</strong> ${currentRequest.bailleur_nom || '—'}<br>
+    <strong>Signataire :</strong> ${currentRequest.locataire_nom || '—'}<br>
+    <strong>Date :</strong> ${new Date(signedAt).toLocaleString('fr-FR')}<br>
+    <strong>Bien :</strong> ${currentRequest.bien_adresse || '—'}
+  `;
+}
+
+function genCertificat(signedAt, sigData) {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const ML = 20, PW = 170;
+
+    // Header
+    doc.setFillColor(15, 118, 110);
+    doc.rect(0, 0, 210, 30, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFICAT DE SIGNATURE ÉLECTRONIQUE', 105, 13, { align: 'center' });
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('BailZen — bailzen.netlify.app', 105, 22, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+
+    let y = 42;
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.setFillColor(240, 253, 250);
+    doc.roundedRect(ML, y - 6, PW, 52, 3, 3, 'F');
+    doc.setFont('helvetica', 'bold'); doc.text('Informations du document signé', ML + 4, y); y += 8;
+    doc.setFont('helvetica', 'normal');
+    [
+      ['Document', currentRequest.doc_title || currentRequest.doc_type],
+      ['Bailleur', currentRequest.bailleur_nom || '—'],
+      ['Signataire', currentRequest.locataire_nom || '—'],
+      ['Bien', currentRequest.bien_adresse || '—'],
+      ['Date de signature', new Date(signedAt).toLocaleString('fr-FR')],
+    ].forEach(([label, val]) => {
+      doc.setFont('helvetica', 'bold'); doc.text(label + ' :', ML + 4, y);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(val, 100);
+      doc.text(lines, ML + 48, y);
+      y += Math.max(6, lines.length * 5);
+    });
+
+    y += 10;
+    doc.setFont('helvetica', 'bold'); doc.text('Signature du locataire :', ML, y); y += 8;
+    doc.rect(ML, y, 80, 40);
+    if (sigData) { try { doc.addImage(sigData, 'PNG', ML + 2, y + 2, 76, 36); } catch(e) {} }
+    y += 50;
+
+    doc.setFontSize(9); doc.setFont('helvetica', 'italic');
+    doc.setTextColor(100, 100, 100);
+    const legalText = 'Cette signature électronique a été apposée conformément à l\'article 1366 du Code civil français. Elle constitue une preuve de l\'accord du signataire sur le document référencé ci-dessus.';
+    const legalLines = doc.splitTextToSize(legalText, PW);
+    doc.text(legalLines, ML, y);
+
+    doc.setFontSize(8);
+    doc.text(`Généré le ${new Date().toLocaleString('fr-FR')} — BailZen`, 105, 285, { align: 'center' });
+
+    doc.save(`certificat_signature_${(currentRequest.locataire_nom || 'locataire').replace(' ', '_')}.pdf`);
+  } catch (e) { console.error('PDF error:', e); }
+}
+
+// ══════ DOCUMENT PREVIEW ══════
+function toggleDocPreview(){
+  const card=document.getElementById('full-preview-card');
+  const btn=document.getElementById('btn-toggle-doc');
+  const isOpen=card.classList.contains('show');
+  card.classList.toggle('show');
+  btn.textContent=isOpen?'📄 Lire le document complet ▾':'📄 Fermer le document ▴';
+}
+
+function renderDocContent(data,docType,sigBailleur){
+  if(!data)return'';
+  const isBail=docType==='bail'||(data.bailType||data.chargesType);
+  return isBail?renderBailPreview(data,sigBailleur):renderEdlPreview(data,sigBailleur);
+}
+
+function renderBailPreview(d,sigBailleur){
+  const f=(v,fb='—')=>v||fb;
+  const fmtD=s=>s?new Date(s+'T12:00:00').toLocaleDateString('fr-FR'):'—';
+  const bt=d.bailType||'nonmeuble';
+  const typeL={nonmeuble:'Non meublé (3 ans)',meuble:'Meublé (1 an)',mobilite:'Mobilité',etudiant:'Étudiant (9 mois)'}[bt]||bt;
+  const loyer=parseFloat(d.loyer)||0,charges=parseFloat(d.charges)||0;
+  const equipsStr=(d.equips||[]).map(e=>e.charAt(0).toUpperCase()+e.slice(1)).join(', ');
+  const chargesTxt=(d.chargesType||'provisions')==='forfait'?'forfaitaires':'provisions avec régularisation annuelle';
+  return`<div class="fpc-bail">
+  <div style="text-align:center;margin-bottom:12px"><strong style="font-size:15px">CONTRAT DE LOCATION ${bt==='meuble'?'MEUBLÉ':bt==='mobilite'?'MOBILITÉ':bt==='etudiant'?'ÉTUDIANT':'NON MEUBLÉ'}</strong><br><span style="font-size:11px;color:#64748b">Loi n°89-462 du 6 juillet 1989 – Loi ALUR – Loi ÉLAN</span></div>
+  <div class="fpc-h">ENTRE LES SOUSSIGNÉS</div>
+  <div class="fpc-row"><span class="fpc-lbl">Bailleur</span><span>${f(d.pciv)} ${f(d.pp)} ${f(d.pn)}${d.pddn?'<br><small>Né(e) le '+fmtD(d.pddn)+(d.pnais?' à '+d.pnais:'')+'</small>':''}${d.pa?'<br><small>'+d.pa+', '+f(d.pcp)+' '+f(d.pv)+'</small>':''}</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Locataire</span><span>${f(d.lciv)} ${f(d.lp)} ${f(d.ln)}${d.lddn?'<br><small>Né(e) le '+fmtD(d.lddn)+(d.lnais?' à '+d.lnais:'')+'</small>':''}${d.lad?'<br><small>'+d.lad+', '+f(d.lcp)+' '+f(d.lv)+'</small>':''}</span></div>
+  ${d.l2p&&d.l2n?`<div class="fpc-row"><span class="fpc-lbl">2e Locataire</span><span>${f(d.l2civ)} ${d.l2p} ${d.l2n}</span></div>`:``}
+  <div class="fpc-h">ART. 1 – DÉSIGNATION DES LOCAUX</div>
+  <div class="fpc-row"><span class="fpc-lbl">Type</span><span>${f(d.btype)}</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Adresse</span><span><strong>${f(d.ba)}, ${f(d.bcp)} ${f(d.bv)}</strong></span></div>
+  ${d.bsurface?`<div class="fpc-row"><span class="fpc-lbl">Surface</span><span>${d.bsurface} m²${d.bpieces?' — '+d.bpieces+' pièces':''}</span></div>`:''}
+  ${d.betage?`<div class="fpc-row"><span class="fpc-lbl">Étage</span><span>${d.betage}</span></div>`:''}
+  ${equipsStr?`<div class="fpc-row"><span class="fpc-lbl">Équipements</span><span>${equipsStr}</span></div>`:''}
+  <div class="fpc-h">ART. 2 – DURÉE</div>
+  <div class="fpc-row"><span class="fpc-lbl">Type</span><span>${typeL}</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Début</span><span>${fmtD(d.ddebut)}</span></div>
+  <div class="fpc-h">ART. 3 – CONDITIONS FINANCIÈRES</div>
+  <div class="fpc-row"><span class="fpc-lbl">Loyer HC</span><span><strong>${loyer.toFixed(2)} €/mois</strong></span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Charges</span><span>${charges.toFixed(2)} €/mois (${chargesTxt})</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Total</span><span><strong>${(loyer+charges).toFixed(2)} €/mois</strong></span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Paiement</span><span>${f(d.paiement,'le 1er du mois')}, ${f(d.modalite)}, par ${f(d.modepai)}</span></div>
+  ${d.dg?`<div class="fpc-h">ART. 4 – DÉPÔT DE GARANTIE</div><div class="fpc-row"><span class="fpc-lbl">Montant</span><span><strong>${d.dg} €</strong></span></div>`:''}
+  <div class="fpc-h">ART. 5 – RÉVISION DU LOYER</div>
+  <div style="font-size:13px;margin-bottom:8px">${d.irl&&bt!=='mobilite'?'Révision annuelle selon l\'IRL (Indice de Référence des Loyers – INSEE).':'Pas de révision prévue.'}</div>
+  <div class="fpc-h">ART. 6 – OBLIGATIONS DU LOCATAIRE</div>
+  <div style="font-size:12px;margin-bottom:8px">• Payer le loyer aux termes convenus<br>• Utiliser paisiblement les locaux<br>• Entretenir les locaux et effectuer les réparations locatives<br>• Ne pas transformer les locaux sans accord écrit<br>${d.assurance?'• Souscrire une assurance habitation et fournir l\'attestation au bailleur':''}</div>
+  ${d.dpe?`<div class="fpc-h">ART. 7 – DPE</div><div class="fpc-row"><span class="fpc-lbl">Classe</span><span>${d.dpe}${d.ges?' — GES : '+d.ges:''}</span></div>${d.conso?`<div class="fpc-row"><span class="fpc-lbl">Consommation</span><span>${d.conso} kWh/an</span></div>`:''}`:``}
+  ${d.clause?`<div class="fpc-h">CLAUSES PARTICULIÈRES</div><div style="font-size:12px;white-space:pre-wrap;margin-bottom:8px">${d.clause}</div>`:''}
+  <div class="fpc-h">MENTIONS LÉGALES</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:8px">Contrat établi conformément à la loi n°89-462 du 6 juillet 1989, modifiée par les lois ALUR (2014), ÉLAN (2018) et Climat et Résilience (2021).</div>
+  <div class="fpc-h">CLAUSE RÉSOLUTOIRE</div>
+  <div style="font-size:11px;color:#64748b">Le bail sera résilié de plein droit, à l'expiration d'un délai de deux mois suivant un commandement de payer infructueux en cas de non-paiement du loyer ou des charges.</div>
+  <div class="fpc-h">SIGNATURE DU BAILLEUR</div>
+  ${sigBailleur?`<div style="margin:4px 0 10px;border:1px solid #e2e8f0;border-radius:8px;padding:4px;display:inline-block;background:white"><img src="${sigBailleur}" style="max-width:220px;max-height:80px;display:block"></div>`:`<div style="font-size:12px;color:#94a3b8;font-style:italic;margin-bottom:10px">✍️ Le bailleur n'a pas encore apposé sa signature.</div>`}
+  </div>`;
+}
+
+function renderEdlPreview(d,sigBailleur){
+  const f=(v,fb='—')=>v||fb;
+  const fmtD=s=>s?new Date(s+'T12:00:00').toLocaleDateString('fr-FR'):'—';
+  const typeLbl=(d.edlType||'entree')==='entree'?"D'ENTRÉE":"DE SORTIE";
+  const roomsRows=(d.rooms||[]).map(r=>`<tr><td class="fpc-tbl-td" style="font-weight:600">${r.label||''}</td><td class="fpc-tbl-td" style="color:${r.etat==='Bon état'?'#059669':r.etat==='Mauvais état'?'#dc2626':'#64748b'}">${r.etat||'—'}</td><td class="fpc-tbl-td" style="color:#64748b">${r.obs||'RAS'}</td></tr>`).join('');
+  return`<div class="fpc-edl">
+  <div style="text-align:center;margin-bottom:12px"><strong style="font-size:15px">ÉTAT DES LIEUX ${typeLbl}</strong><br><span style="font-size:11px;color:#64748b">Établi le ${fmtD(d.date)}</span></div>
+  <div class="fpc-h">PARTIES</div>
+  <div class="fpc-row"><span class="fpc-lbl">Bailleur</span><span>${f(d.pp)} ${f(d.pn)}</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Locataire</span><span>${f(d.lp)} ${f(d.ln)}</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Adresse</span><span>${f(d.adresse)}</span></div>
+  <div class="fpc-h">ÉTAT DES PIÈCES</div>
+  <table class="fpc-tbl"><thead><tr><th>Pièce</th><th>État</th><th>Observations</th></tr></thead><tbody>${roomsRows}</tbody></table>
+  <div class="fpc-h">COMPTEURS & CLÉS</div>
+  <div class="fpc-row"><span class="fpc-lbl">Électricité</span><span>${f(d.elec,'—')} kWh</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Gaz</span><span>${f(d.gaz,'—')} m³</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Eau</span><span>${f(d.eau,'—')} m³</span></div>
+  <div class="fpc-row"><span class="fpc-lbl">Clés remises</span><span>${f(d.cles,'—')}</span></div>
+  ${d.obs?`<div class="fpc-h">OBSERVATIONS</div><div style="font-size:13px;margin-bottom:8px">${d.obs}</div>`:''}
+  <div class="fpc-h">SIGNATURE DU BAILLEUR</div>
+  ${sigBailleur?`<div style="margin:4px 0 10px;border:1px solid #e2e8f0;border-radius:8px;padding:4px;display:inline-block;background:white"><img src="${sigBailleur}" style="max-width:220px;max-height:80px;display:block"></div>`:`<div style="font-size:12px;color:#94a3b8;font-style:italic;margin-bottom:10px">✍️ Le bailleur n'a pas encore apposé sa signature.</div>`}
+  </div>`;
+}
+
+// ══════ PDF BAIL DEPUIS JSON ══════
+function genBailFromData(d,sigData,sigBailleur){
+  try{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const ML=20,PW=170;
+    const fD=s=>{if(!s)return'___________';return new Date(s+'T12:00:00').toLocaleDateString('fr-FR');};
+    const chk=(doc,y,lim=270)=>{if(y>lim){doc.addPage();return 20;}return y;};
+    const hdr=(doc,title,sub,c)=>{doc.setFillColor(...c);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text(title,105,14,{align:'center'});doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(sub,105,23,{align:'center'});doc.setTextColor(0,0,0);};
+    const sec=(doc,text,y,c)=>{doc.setFillColor(...c);doc.rect(18,y-5,174,9,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(text,21,y+1);doc.setTextColor(0,0,0);return y+11;};
+    const txt=(doc,text,x,y,w,sz=10,bold=false)=>{doc.setFontSize(sz);doc.setFont('helvetica',bold?'bold':'normal');const lines=doc.splitTextToSize(text,w);doc.text(lines,x,y);return y+lines.length*(sz*0.42);};
+    const u2=['','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
+    const d2=['','dix','vingt','trente','quarante','cinquante','soixante','soixante','quatre-vingt','quatre-vingt'];
+    const n2=(n)=>{if(n<20)return u2[n];const t=Math.floor(n/10),o=n%10;if(t===7)return d2[6]+(o?'-'+u2[10+o]:'');if(t===9)return d2[8]+'-'+u2[10+o];return d2[t]+(o?'-'+u2[o]:'');};
+    const eur=(n)=>{const e=Math.floor(n),c=Math.round((n-e)*100);let h='';if(e>=1000){const m=Math.floor(e/1000);h+=(m>1?n2(m)+' ':'')+' mille ';}const r=e%1000;if(r>=100){const q=Math.floor(r/100);h+=(q>1?n2(q)+' ':'')+' cent'+(r%100?' ':' ');}const l=r%100;if(l>0)h+=n2(l);h=h.trim()+(e>1?' euros':' euro');if(c>0)h+=' et '+n2(c)+(c>1?' centimes':' centime');return h;};
+    const bt=d.bailType||'nonmeuble',ct=d.chargesType||'provisions';
+    const propFull=`${d.pciv||''} ${d.pp||''} ${d.pn||''}`.trim();
+    const locFull=`${d.lciv||''} ${d.lp||''} ${d.ln||''}`.trim();
+    const hasLoc2=!!(d.l2p&&d.l2n);const loc2Full=hasLoc2?`${d.l2civ||''} ${d.l2p} ${d.l2n}`.trim():'';
+    const adBien=`${d.ba||''}, ${d.bcp||''} ${d.bv||''}`.trim();
+    const loyer=parseFloat(d.loyer)||0,charges=parseFloat(d.charges)||0,dg=parseFloat(d.dg)||0,total=loyer+charges;
+    const chargesTxt=ct==='forfait'?'forfaitaires (non récupérables)':'provisionnelles avec régularisation annuelle';
+    let typeLbl,duree,durMois;
+    if(bt==='meuble'){typeLbl='MEUBLÉ';duree='1 an';durMois=12;}else if(bt==='mobilite'){typeLbl='MOBILITÉ';durMois=parseInt(d.dureemois)||1;duree=durMois+' mois';}else if(bt==='etudiant'){typeLbl='ÉTUDIANT';duree='9 mois';durMois=9;}else{typeLbl='NON MEUBLÉ';duree='3 ans';durMois=36;}
+    const getDateFin=()=>{if(!d.ddebut)return'___________';const dd=new Date(d.ddebut+'T12:00:00');dd.setMonth(dd.getMonth()+durMois);dd.setDate(dd.getDate()-1);return dd.toLocaleDateString('fr-FR');};
+    const equips=(d.equips||[]).map(e=>e.charAt(0).toUpperCase()+e.slice(1));
+    hdr(doc,`CONTRAT DE LOCATION ${typeLbl}`,'Loi n°89-462 du 6 juillet 1989 – Loi ALUR – Loi ÉLAN',[30,64,175]);
+    let y=38;
+    y=sec(doc,'ENTRE LES SOUSSIGNÉS',y,[30,64,175]);
+    y=txt(doc,`LE BAILLEUR : ${propFull}`,ML,y,PW,10,true);
+    if(d.pddn&&d.pnais)y=txt(doc,`Né(e) le ${fD(d.pddn)} à ${d.pnais}`,ML+4,y,PW-4,9);
+    if(d.pa)y=txt(doc,`Adresse : ${d.pa}, ${d.pcp||''} ${d.pv||''}`,ML+4,y,PW-4,9);
+    if(d.pt||d.pe)y=txt(doc,`${d.pt?'Tél. : '+d.pt+'   ':''}${d.pe?'Email : '+d.pe:''}`,ML+4,y,PW-4,9);
+    y+=4;
+    y=txt(doc,`LE LOCATAIRE : ${locFull}`,ML,y,PW,10,true);
+    if(d.lddn&&d.lnais)y=txt(doc,`Né(e) le ${fD(d.lddn)} à ${d.lnais}`,ML+4,y,PW-4,9);
+    if(d.lad)y=txt(doc,`Adresse actuelle : ${d.lad}, ${d.lcp||''} ${d.lv||''}`,ML+4,y,PW-4,9);
+    if(d.lt||d.le)y=txt(doc,`${d.lt?'Tél. : '+d.lt+'   ':''}${d.le?'Email : '+d.le:''}`,ML+4,y,PW-4,9);
+    if(hasLoc2){y+=2;y=txt(doc,`2E LOCATAIRE : ${loc2Full}`,ML,y,PW,10,true);}
+    y+=8;
+    y=chk(doc,y);y=sec(doc,'ARTICLE 1 – DÉSIGNATION DES LOCAUX',y,[30,64,175]);
+    y=txt(doc,`${d.btype||'Appartement'} à usage d'habitation ${bt==='meuble'?'meublée':'nue'} situé(e) :`,ML,y,PW,10);
+    y=txt(doc,adBien,ML+4,y,PW-4,10,true);y+=2;
+    const det=[];if(d.betage)det.push(`Étage : ${d.betage}`);if(d.bsurface)det.push(`Surface habitable : ${d.bsurface} m²`);if(d.bpieces)det.push(`Pièces : ${d.bpieces}`);det.push(`Régime : ${d.bregime||'copropriété'}`);
+    y=txt(doc,det.join('   –   '),ML,y,PW,9);
+    if(d.bchauffage||d.bec)y=txt(doc,`Chauffage : ${d.bchauffage||'—'}   –   Eau chaude : ${d.bec||'—'}`,ML,y,PW,9);
+    if(d.bfiscal)y=txt(doc,`Identifiant fiscal : ${d.bfiscal}`,ML,y,PW,9,true);
+    if(equips.length)y=txt(doc,`Équipements : ${equips.join(', ')}`,ML,y,PW,9);
+    y+=8;
+    y=chk(doc,y);y=sec(doc,'ARTICLE 2 – DURÉE DU BAIL',y,[30,64,175]);
+    if(bt==='mobilite')y=txt(doc,`Bail mobilité conclu pour ${duree}, prenant effet le ${fD(d.ddebut)} et se terminant le ${getDateFin()}. Ce bail ne peut être ni renouvelé ni reconduit.`,ML,y,PW);
+    else if(bt==='etudiant')y=txt(doc,`Bail étudiant conclu pour 9 mois, prenant effet le ${fD(d.ddebut)} et se terminant le ${getDateFin()}. Ce bail ne se renouvelle pas tacitement.`,ML,y,PW);
+    else{y=txt(doc,`Bail conclu pour une durée de ${duree}, prenant effet le ${fD(d.ddebut)}.`,ML,y,PW);y=txt(doc,`À l'expiration, le bail sera reconduit tacitement par périodes de ${duree}, sauf congé délivré dans les délais légaux (${bt==='meuble'?'3 mois':'6 mois'} pour le bailleur, ${bt==='meuble'?'1 mois':'3 mois'} pour le locataire).`,ML,y,PW,9);}
+    y+=8;
+    y=chk(doc,y);y=sec(doc,'ARTICLE 3 – CONDITIONS FINANCIÈRES',y,[30,64,175]);
+    y=txt(doc,`Loyer mensuel hors charges : ${loyer.toFixed(2)} € (${eur(loyer)})`,ML,y,PW,10,true);
+    y=txt(doc,`Charges locatives : ${charges.toFixed(2)} €/mois – Nature : ${chargesTxt}`,ML,y,PW,9);
+    y=txt(doc,`Total mensuel : ${total.toFixed(2)} € (${eur(total)})`,ML,y,PW,10,true);y+=2;
+    y=txt(doc,`Paiement : ${d.paiement||'le 1er du mois'}, ${d.modalite||'à terme à échoir'}, par ${d.modepai||'virement bancaire'}.`,ML,y,PW,9);
+    if(d.zonetendue&&d.loyerref){y+=2;y=txt(doc,'Encadrement des loyers (zone tendue) :',ML,y,PW,9,true);y=txt(doc,`Loyer de référence : ${d.loyerref} €/m²   –   Loyer de référence majoré : ${d.loyerrefmaj||'N/A'} €/m²`,ML+4,y,PW-4,9);}
+    y+=8;
+    y=chk(doc,y);y=sec(doc,'ARTICLE 4 – DÉPÔT DE GARANTIE',y,[30,64,175]);
+    if(bt==='mobilite')y=txt(doc,'Aucun dépôt de garantie ne peut être exigé pour un bail mobilité.',ML,y,PW,9);
+    else if(dg>0)y=txt(doc,`Un dépôt de garantie de ${dg.toFixed(2)} € (${eur(dg)}) est versé à la signature. Il sera restitué dans 1 mois si l'état des lieux est conforme, ou 2 mois dans le cas contraire.`,ML,y,PW,9);
+    else y=txt(doc,'Aucun dépôt de garantie n\'est exigé.',ML,y,PW,9);
+    y+=8;
+    y=chk(doc,y);y=sec(doc,'ARTICLE 5 – RÉVISION DU LOYER',y,[30,64,175]);
+    y=txt(doc,d.irl&&bt!=='mobilite'?'Le loyer sera révisé chaque année selon l\'IRL (Indice de Référence des Loyers – INSEE).':'Aucune clause d\'indexation n\'est prévue.',ML,y,PW,9);
+    y+=8;
+    y=chk(doc,y);y=sec(doc,'ARTICLE 6 – OBLIGATIONS DU LOCATAIRE',y,[30,64,175]);
+    const obligs=['Payer le loyer et les charges aux termes convenus.','Utiliser paisiblement les locaux conformément à leur destination.','Répondre des dégradations et pertes survenant pendant la location, sauf vétusté.','Ne pas transformer les locaux sans accord écrit préalable du bailleur.','Entretenir les locaux et effectuer les menues réparations locatives.',`Animaux de compagnie : ${d.animaux||'interdits (sauf chats)'}.`];
+    if(d.assurance)obligs.push('Souscrire une assurance habitation et remettre l\'attestation au bailleur à chaque renouvellement annuel.');
+    obligs.forEach(o=>{y=chk(doc,y);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('•',ML,y);const lines=doc.splitTextToSize(o,PW-8);doc.text(lines,ML+5,y);y+=lines.length*4.5+2;});
+    y+=6;
+    if(d.dpe){y=chk(doc,y);y=sec(doc,'ARTICLE 7 – INFORMATIONS ÉNERGÉTIQUES (DPE)',y,[30,64,175]);y=txt(doc,`Classe de performance énergétique : ${d.dpe}${d.ges?'   –   Émissions de GES : '+d.ges:''}`,ML,y,PW,9,true);if(d.conso)y=txt(doc,`Consommation estimée : ${d.conso} kWh/an`,ML,y,PW,9);y+=8;}
+    y=chk(doc,y);y=sec(doc,'ARTICLE 8 – CLAUSE RÉSOLUTOIRE',y,[30,64,175]);
+    y=txt(doc,'Le présent contrat sera résilié de plein droit, à l\'expiration d\'un délai de deux mois suivant un commandement de payer infructueux en cas de non-paiement du loyer ou des charges.',ML,y,PW,9);y+=8;
+    if(d.clause){y=chk(doc,y);y=sec(doc,'CLAUSES PARTICULIÈRES',y,[30,64,175]);y=txt(doc,d.clause,ML,y,PW,9);y+=8;}
+    y=chk(doc,y);y=sec(doc,'MENTIONS LÉGALES',y,[30,64,175]);
+    y=txt(doc,'Contrat établi conformément à la loi n°89-462 du 6 juillet 1989, modifiée par les lois ALUR (2014), ÉLAN (2018) et Climat et Résilience (2021).',ML,y,PW,8);y+=10;
+    y=chk(doc,y,220);if(y>215){doc.addPage();y=20;}
+    y=sec(doc,'SIGNATURES',y,[30,64,175]);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text(`Signé électroniquement le ${new Date().toLocaleDateString('fr-FR')} via BailZen`,ML,y);y+=14;
+    const bw=hasLoc2?52:80,bgap=hasLoc2?7:15;
+    const sigs=hasLoc2?[['Le Bailleur',propFull,sigBailleur||null],['Locataire 1',locFull,sigData],['Locataire 2',loc2Full,null]]:[['Le Bailleur',propFull,sigBailleur||null],['Le Locataire',locFull,sigData]];
+    sigs.forEach((s,i)=>{const bx=ML+i*(bw+bgap);doc.rect(bx,y,bw,46);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(s[0],bx+3,y+8);doc.setFont('helvetica','normal');doc.setFontSize(8);const nl=doc.splitTextToSize(s[1],bw-6);doc.text(nl,bx+3,y+16);if(s[2]){try{doc.addImage(s[2],'PNG',bx+2,y+20,bw-4,22);}catch(e){}}doc.setFontSize(7);doc.setTextColor(120,120,120);doc.text('Lu et approuvé – Signature',bx+3,y+44);doc.setTextColor(0,0,0);});
+    const nb=doc.getNumberOfPages();for(let p=1;p<=nb;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(150,150,150);doc.text(`BailZen – Bail ${typeLbl} – ${propFull} / ${locFull} – Page ${p}/${nb}`,105,292,{align:'center'});doc.setTextColor(0,0,0);}
+    doc.save(`bail_${locFull.replace(/\s+/g,'_')}_signé.pdf`);
+  }catch(e){console.error('genBailFromData error:',e);genCertificat(new Date().toISOString(),sigData);}
+}
+
+// ══════ PDF EDL DEPUIS JSON ══════
+function genEdlFromData(d,sigData,sigBailleur){
+  try{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const ML=20,PW=170;
+    const fD=s=>{if(!s)return'___________';return new Date(s+'T12:00:00').toLocaleDateString('fr-FR');};
+    const chk=(doc,y,lim=270)=>{if(y>lim){doc.addPage();return 20;}return y;};
+    const hdr=(doc,title,sub,c)=>{doc.setFillColor(...c);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text(title,105,14,{align:'center'});doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(sub,105,23,{align:'center'});doc.setTextColor(0,0,0);};
+    const sec=(doc,text,y,c)=>{doc.setFillColor(...c);doc.rect(18,y-5,174,9,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(text,21,y+1);doc.setTextColor(0,0,0);return y+11;};
+    const txt=(doc,text,x,y,w,sz=10,bold=false)=>{doc.setFontSize(sz);doc.setFont('helvetica',bold?'bold':'normal');const lines=doc.splitTextToSize(text,w);doc.text(lines,x,y);return y+lines.length*(sz*0.42);};
+    const typeLbl=(d.edlType||'entree')==='entree'?"D'ENTRÉE":"DE SORTIE";
+    const propNom=`${d.pp||''} ${d.pn||''}`.trim();
+    const locNom=`${d.lp||''} ${d.ln||''}`.trim();
+    const dateEdl=fD(d.date);
+    hdr(doc,`ÉTAT DES LIEUX ${typeLbl}`,`Établi le ${dateEdl}`,[5,150,105]);
+    let y=40;
+    y=sec(doc,'PARTIES',y,[5,150,105]);
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Bailleur :',ML,y);doc.setFont('helvetica','normal');doc.text(propNom,ML+22,y);y+=7;
+    doc.setFont('helvetica','bold');doc.text('Locataire :',ML,y);doc.setFont('helvetica','normal');doc.text(locNom,ML+22,y);y+=7;
+    doc.setFont('helvetica','bold');doc.text('Adresse :',ML,y);doc.setFont('helvetica','normal');const al=doc.splitTextToSize(d.adresse||'',145);doc.text(al,ML+22,y);y+=al.length*5+8;
+    y=sec(doc,'ÉTAT DES PIÈCES',y,[5,150,105]);
+    doc.setFillColor(5,150,105);doc.rect(ML-2,y-4,PW+4,8,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text('Pièce',ML,y+1);doc.text('État',ML+85,y+1);doc.text('Observations',ML+115,y+1);doc.setTextColor(0,0,0);y+=11;
+    (d.rooms||[]).forEach((room,i)=>{y=chk(doc,y);const etat=room.etat||'N/A',obs=room.obs||'RAS';if(i%2===0){doc.setFillColor(245,250,247);doc.rect(ML-2,y-4,PW+4,10,'F');}doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(room.label||'',ML,y);if(etat==='Bon état')doc.setTextColor(5,150,105);else if(etat==='Mauvais état')doc.setTextColor(220,38,38);else doc.setTextColor(80,80,80);doc.text(etat,ML+85,y);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');const ol=doc.splitTextToSize(obs,52);doc.text(ol,ML+115,y);y+=Math.max(9,ol.length*4+5);});
+    y+=8;y=chk(doc,y);y=sec(doc,'RELEVÉS DE COMPTEURS',y,[5,150,105]);
+    [['Électricité',d.elec,'kWh'],['Gaz',d.gaz,'m³'],['Eau',d.eau,'m³']].forEach(([l,v,u2],i)=>{if(i%2===0){doc.setFillColor(245,250,247);doc.rect(ML-2,y-4,PW+4,9,'F');}doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text(l+' :',ML,y);doc.setFont('helvetica','normal');doc.text(v?`${v} ${u2}`:`__________ ${u2}`,ML+28,y);y+=10;});
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Clés remises :',ML,y);doc.setFont('helvetica','normal');doc.text(d.cles||'__',ML+38,y);y+=12;
+    if(d.obs){y=chk(doc,y);y=sec(doc,'OBSERVATIONS',y,[5,150,105]);y=txt(doc,d.obs,ML,y,PW);y+=10;}
+    y=chk(doc,y,220);if(y>215){doc.addPage();y=20;}
+    y=sec(doc,'SIGNATURES',y,[5,150,105]);
+    doc.setFontSize(9);doc.text(`Signé électroniquement le ${dateEdl} via BailZen`,ML,y);y+=14;
+    [[ML,'Le Bailleur',propNom,sigBailleur||null],[ML+92,'Le Locataire',locNom,sigData]].forEach(([bx,role,nom,sig])=>{doc.rect(bx,y,78,46);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(role,bx+3,y+7);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text(nom,bx+3,y+15);if(sig){try{doc.addImage(sig,'PNG',bx+2,y+18,74,24);}catch(e){}}doc.setFontSize(7);doc.setTextColor(120,120,120);doc.text('Lu et approuvé – Signature',bx+3,y+43);doc.setTextColor(0,0,0);});
+    doc.save(`etat_des_lieux_${typeLbl.replace(/'/g,'')}_${locNom.replace(/\s+/g,'_')}_signé.pdf`);
+  }catch(e){console.error('genEdlFromData error:',e);genCertificat(new Date().toISOString(),sigData);}
+}
+
+// Init
+loadRequest();
+</script>
+</body>
+</html>
